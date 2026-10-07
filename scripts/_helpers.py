@@ -13,7 +13,8 @@ def check(condition, message):
     if not condition:
         raise WorkshopError(message)
 
-def read_csv(path, columns):
+def read_csv(path, columns=None):
+    check(columns is not None, f"Fill in the list of columns for {path.name}. See the FILL hint in HINTS.md.")
     check(path.is_file() and path.stat().st_size > 0,
           f"Missing or empty file: {path}. Read README.md > Data setup; run the earlier stage if this is an output file.")
     try:
@@ -28,6 +29,10 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
 def run(main):
+    # A BLANK left as ... is still valid Python, so name it before it causes a confusing error.
+    blanks = [name for name, value in main.__globals__.items() if value is Ellipsis]
+    if blanks:
+        raise SystemExit(f"\nSTOP: Complete these blanks first: {', '.join(blanks)}. See HINTS.md.")
     try:
         main()
     except (WorkshopError, OSError, ValueError) as exc:
