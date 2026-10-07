@@ -7,11 +7,10 @@ script and inspect a real output. You do not need to invent any Python code.
 
 Before starting, complete README.md steps 1–3. Keep `HINTS.md` nearby.
 
-**The journey:** raw CSV → ingestion → cleaning → analytics → API → dashboard.
+**The journey (ETL):** raw CSV → ingest (Extract) → clean + analyze (Transform) → JSON file (Load) → dashboard.
 
 A CSV is a file with rows and named columns. A DataFrame is Python's way to work
 with that file like a spreadsheet. JSON is named data that apps can read.
-An API is a way for another app to request data from a URL.
 
 ## 1. Meet the raw data (5 minutes)
 
@@ -28,11 +27,16 @@ Do not edit the CSV files. Tags and external links are outside this lab.
 
 ## 2. Ingest: read the files (10 minutes)
 
-Open `scripts/01_ingest.py`. Replace just the two `...` values.
+Open `scripts/01_ingest.py`. Replace the two `...` values.
 Word bank: `"movies.csv"`, `"ratings.csv"`.
 
 - `MOVIES_FILE` is the file with movie names and genres.
 - `RATINGS_FILE` is the file with user scores.
+
+Then replace the two `#[FILL],` lines with each file's column names, in square
+brackets, like `["movieId", "title", "genres"],`. Copy them from the header row of
+the matching file in `data/`. This list tells the script which columns must exist,
+so a wrong file stops right away instead of breaking a later stage.
 
 Run:
 
@@ -102,46 +106,47 @@ Then open `movie_metrics.csv` and compare `rating_count` with `average_rating`.
 
 **Checkpoint:** movie counts and monthly counts each add up to cleaned ratings.
 The script checks both automatically. A movie with one five-star score has little
-support, so the API leaderboard defaults to at least 20 ratings.
+support, so the dashboard leaderboard defaults to at least 20 ratings.
 
-## 5. API: request the results (10 minutes)
+## 5. Build the dashboard with ChatGPT (20 minutes)
 
-Open `scripts/04_api.py`. Word bank: `"/summary"`, `"/movies"`.
-Use each path for its matching variable. A route is a URL path like `/summary`.
+Find `output/dashboard_data.json`. It holds the real results in one file:
+summary numbers plus movie, genre, and monthly lists. Open ChatGPT, ask it to
+build a Site, attach this JSON file, and paste the prompt below. If ChatGPT
+cannot read the file, fix the upload rather than letting it invent examples.
 
-Run:
+> Build a beginner-friendly movie rating analytics dashboard using Sites and the
+> attached dashboard_data.json. Use only the attached real data. If you cannot
+> read it, tell me and stop; do not invent numbers or movies.
+>
+> Show four summary cards: catalog movies, rated movies, ratings, and users.
+> Add a movie list with title, genres, number of ratings, and average rating.
+> Let me switch between most rated and highest average, and choose a minimum
+> rating count, defaulting to 20. Filter before sorting. Break tied averages by
+> rating count descending and then movieId ascending. Display average ratings
+> to two decimal places.
+>
+> Add genre rating counts and genre average ratings, plus a monthly rating
+> activity chart sorted chronologically using the field rating_month.
+> Explain that genre totals overlap and these are ratings, not watches or revenue.
+>
+> Use plain labels, readable text, and a layout that works on a phone. Include
+> GroupLens MovieLens attribution and a link to the dataset.
+> Do not add a recommendation model, login, or fabricated data.
 
-```sh
-python run_workshop.py api
-```
+**Checkpoint:**
 
-Leave the terminal running. Open http://127.0.0.1:8000/docs.
-Choose **GET /summary → Try it out → Execute**.
-The response is the same summary you saw in the file.
-Choose **GET /movies** and execute with `limit=10`, `min_ratings=20`, and
-`sort=average_rating`. You should receive up to ten movies with sufficient ratings,
-ordered by average score. Try `sort=rating_count` to see popularity instead.
+1. The four cards match `output/summary.json`.
+2. With the minimum count at 20, every visible movie has at least 20 ratings.
+3. Sorting by highest average shows scores descending; most rated ranks by count.
+4. One genre matches its row in `output/genre_metrics.csv`.
 
-Other routes: `/genres`, `/monthly`, `/dashboard` (all data), `/health` (ready check).
-A 200 response means success. A 422 response means a parameter was invalid.
-A 503 response means analytics output is missing; rerun the pipeline.
-The minimum count is a teaching choice, not a statistical guarantee.
-
-**Checkpoint:** change `limit` to 3; at most three rows should be returned.
-Press Ctrl+C in the terminal to stop the API.
-
-## 6. Build the dashboard (20 minutes)
-
-Follow `DASHBOARD.md`. Import the real `output/dashboard_data.json`, then use the
-provided prompt to build a dashboard with ChatGPT's Sites functionality.
-This file approach works without exposing your computer's local API to the internet.
-
-**Checkpoint:** dashboard totals match `summary.json`, and changing the minimum
-rating filter changes the visible movie list. Save one cautious business observation,
-such as “Among movies with at least 20 ratings in this sample, …”.
+If something is wrong, tell ChatGPT the exact discrepancy and the expected value
+from the output file. If you rerun the pipeline, upload the new JSON again.
+Save one cautious observation, such as "Among movies with at least 20 ratings in this sample, …".
 
 ## Finish
 
-You have connected raw files, dependable rows, metrics, an API, and a dashboard.
+You have built an ETL pipeline: raw files → dependable rows → metrics → a dashboard.
 The completed files are available for reviewing the full flow later. For a recovery
-run at any time, use `python run_workshop.py pipeline --completed`.
+run at any time, use `python run_workshop.py --completed`.

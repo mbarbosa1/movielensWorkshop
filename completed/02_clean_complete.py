@@ -3,31 +3,19 @@
 # Find the repository even when this file is run from another folder.
 import sys
 from pathlib import Path
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from _helpers import ROOT, OUTPUT, check, filled, read_csv, write_json, run
+from _helpers import ROOT, OUTPUT, check, read_csv, write_json, run
 
 import pandas as pd
-
 
 # EXERCISE 2: MovieLens ratings use half stars, from 0.5 to 5.0.
 MIN_RATING = 0.5
 MAX_RATING = 5.0
 JOIN_COLUMN = "movieId"
 
-
 def main():
     # ------------------------------------------------------------------
-    # Step 1: Confirm the exercise answers are filled in and correct.
-    # ------------------------------------------------------------------
-    filled(MIN_RATING=MIN_RATING, MAX_RATING=MAX_RATING, JOIN_COLUMN=JOIN_COLUMN)
-    check(
-        MIN_RATING == 0.5 and MAX_RATING == 5.0 and JOIN_COLUMN == "movieId",
-        "Use the MovieLens scale 0.5 to 5.0 and join on movieId. See HINTS.md.",
-    )
-
-    # ------------------------------------------------------------------
-    # Step 2: Load the ingested data from checkpoint 1.
+    # Step 1: Load the ingested data from checkpoint 1.
     # ------------------------------------------------------------------
     movies = read_csv(OUTPUT / "movies_ingested.csv", ["movieId", "title", "genres"])
     ratings = read_csv(
@@ -39,7 +27,7 @@ def main():
     report = {"input_movies": len(movies), "input_ratings": len(ratings)}
 
     # ------------------------------------------------------------------
-    # Step 3: Clean the movies.
+    # Step 2: Clean the movies.
     # ------------------------------------------------------------------
     # Convert invalid numbers to missing values so we can count and remove them.
     movies["movieId"] = pd.to_numeric(movies["movieId"], errors="coerce")
@@ -71,7 +59,7 @@ def main():
     check(not movies.empty, "No valid movies remain. Check the raw movies.csv file.")
 
     # ------------------------------------------------------------------
-    # Step 4: Remove invalid ratings.
+    # Step 3: Remove invalid ratings.
     # ------------------------------------------------------------------
     # Convert every column to numbers; anything unreadable becomes missing.
     for column in ["userId", "movieId", "rating", "timestamp"]:
@@ -99,7 +87,7 @@ def main():
     ratings = ratings.loc[valid_ratings].copy()
 
     # ------------------------------------------------------------------
-    # Step 5: Remove duplicate ratings.
+    # Step 4: Remove duplicate ratings.
     # ------------------------------------------------------------------
     # Exact copies of the same row.
     before = len(ratings)
@@ -115,7 +103,7 @@ def main():
     report["older_user_movie_ratings_removed"] = before - len(ratings)
 
     # ------------------------------------------------------------------
-    # Step 6: Keep only ratings for movies in the catalog.
+    # Step 5: Keep only ratings for movies in the catalog.
     # A rating needs a movie in the catalog; count unmatched rows before removing.
     # ------------------------------------------------------------------
     matched = ratings[JOIN_COLUMN].isin(movies[JOIN_COLUMN])
@@ -127,7 +115,7 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # Step 7: Tidy column types and add readable dates.
+    # Step 6: Tidy column types and add readable dates.
     # ------------------------------------------------------------------
     for column in ["userId", "movieId", "timestamp"]:
         ratings[column] = ratings[column].astype("int64")
@@ -140,7 +128,7 @@ def main():
     ratings["rating_month"] = ratings["rated_at"].str[:7]
 
     # ------------------------------------------------------------------
-    # Step 8: Final checks before saving.
+    # Step 7: Final checks before saving.
     # ------------------------------------------------------------------
     check(
         not ratings.duplicated(["userId", "movieId"]).any(),
@@ -152,22 +140,13 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # Step 9: Save the cleaned data and the report.
+    # Step 8: Save the cleaned data and the report.
     # ------------------------------------------------------------------
     report.update(clean_movies=len(movies), clean_ratings=len(ratings))
     movies.to_csv(OUTPUT / "movies_clean.csv", index=False)
     ratings.to_csv(OUTPUT / "ratings_clean.csv", index=False)
     write_json(OUTPUT / "cleaning_report.json", report)
 
-    # Delete results from earlier runs so they are not mistaken for this run's.
-    for name in [
-        "movie_metrics.csv",
-        "genre_metrics.csv",
-        "monthly_metrics.csv",
-        "summary.json",
-        "dashboard_data.json",
-    ]:
-        (OUTPUT / name).unlink(missing_ok=True)
 
     print(f"CHECKPOINT 2: {len(movies):,} clean movies; {len(ratings):,} clean ratings.")
     print("Read output/cleaning_report.json to see every removal count. Next: 03_analyze.py.")

@@ -1,6 +1,2 @@
 # Python 3.10 or newer. Install in a virtual environment (README.md).
 pandas>=2.2,<3.0
-fastapi>=0.115,<1.0
-uvicorn>=0.30,<1.0
-# Used by verify_workshop.py for API checks; students do not need to edit tests.
-httpx>=0.27,<1.0

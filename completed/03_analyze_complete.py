@@ -3,28 +3,16 @@
 # Find the repository even when this file is run from another folder.
 import sys
 from pathlib import Path
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from _helpers import ROOT, OUTPUT, check, filled, read_csv, write_json, run
-
+from _helpers import ROOT, OUTPUT, check, read_csv, write_json, run
 
 # EXERCISE 3: count ratings; use their mean (average).
 COUNT_OPERATION = "count"
 AVERAGE_OPERATION = "mean"
 
-
 def main():
     # ------------------------------------------------------------------
-    # Step 1: Confirm the exercise answers are filled in and correct.
-    # ------------------------------------------------------------------
-    filled(COUNT_OPERATION=COUNT_OPERATION, AVERAGE_OPERATION=AVERAGE_OPERATION)
-    check(
-        COUNT_OPERATION == "count" and AVERAGE_OPERATION == "mean",
-        "Use count and mean. See HINTS.md.",
-    )
-
-    # ------------------------------------------------------------------
-    # Step 2: Load the cleaned data from checkpoint 2.
+    # Step 1: Load the cleaned data from checkpoint 2.
     # ------------------------------------------------------------------
     movies = read_csv(OUTPUT / "movies_clean.csv", ["movieId", "title", "genres"])
     ratings = read_csv(
@@ -33,7 +21,7 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # Step 3: Per-movie metrics.
+    # Step 2: Per-movie metrics.
     # One row per rated movie. Movies with no ratings are still counted in the catalog.
     # ------------------------------------------------------------------
     # How many ratings each movie got, and its average rating.
@@ -50,7 +38,7 @@ def main():
     metrics = metrics.sort_values(["rating_count", "movieId"], ascending=[False, True])
 
     # ------------------------------------------------------------------
-    # Step 4: Per-genre metrics.
+    # Step 3: Per-genre metrics.
     # Multi-genre movies contribute once to each listed genre. Do not add genre totals.
     # ------------------------------------------------------------------
     # Attach genres to every rating, then split "Action|Comedy" into a list.
@@ -66,7 +54,7 @@ def main():
     genres = genres.sort_values(["rating_count", "genre"], ascending=[False, True])
 
     # ------------------------------------------------------------------
-    # Step 5: Per-month activity.
+    # Step 4: Per-month activity.
     # ------------------------------------------------------------------
     monthly = ratings.groupby("rating_month", as_index=False).agg(
         rating_count=("rating", "count"),
@@ -74,7 +62,7 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # Step 6: Headline numbers for the whole dataset.
+    # Step 5: Headline numbers for the whole dataset.
     # ------------------------------------------------------------------
     summary = {
         "catalog_movies": len(movies),
@@ -87,7 +75,7 @@ def main():
     }
 
     # ------------------------------------------------------------------
-    # Step 7: Sanity checks. Totals must add up and averages must be on the 0.5-5 scale.
+    # Step 6: Sanity checks. Totals must add up and averages must be on the 0.5-5 scale.
     # ------------------------------------------------------------------
     check(
         int(metrics["rating_count"].sum()) == len(ratings),
@@ -103,7 +91,7 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # Step 8: Save the results.
+    # Step 7: Save the results.
     # ------------------------------------------------------------------
     # Round averages only after the checks, so the checks use exact values.
     metrics["average_rating"] = metrics["average_rating"].round(4)
@@ -114,7 +102,7 @@ def main():
     monthly.to_csv(OUTPUT / "monthly_metrics.csv", index=False)
     write_json(OUTPUT / "summary.json", summary)
 
-    # This single file can power a Sites dashboard without a hosted Python API.
+    # This single file is what you give ChatGPT to build the dashboard.
     write_json(OUTPUT / "dashboard_data.json", {
         "schema_version": 1,
         "source": "GroupLens MovieLens Latest Small",
@@ -129,7 +117,7 @@ def main():
     })
 
     print(f"CHECKPOINT 3: {summary['ratings']:,} ratings summarized; dashboard_data.json is ready.")
-    print("Next: start the API with run_workshop.py api, or follow DASHBOARD.md.")
+    print("Next: give output/dashboard_data.json to ChatGPT (WORKSHOP.md step 5).")
 
 
 if __name__ == "__main__":

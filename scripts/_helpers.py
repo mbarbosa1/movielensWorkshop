@@ -13,10 +13,6 @@ def check(condition, message):
     if not condition:
         raise WorkshopError(message)
 
-def filled(**answers):
-    missing = [name for name, value in answers.items() if value is Ellipsis]
-    check(not missing, "Complete these blanks first: " + ", ".join(missing) + ". See HINTS.md or the matching completed/ file.")
-
 def read_csv(path, columns):
     check(path.is_file() and path.stat().st_size > 0,
           f"Missing or empty file: {path}. Read README.md > Data setup; run the earlier stage if this is an output file.")
